@@ -366,53 +366,6 @@ const COLORS=[
 {name:"rainbow", gradient:true}
 ];
 
-/* ---------- IMAGE CACHE ---------- */
-const IMG = {};
-const BASE = "https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/";
-
-/* core object images */
-const OBJECT_IMAGES = ITEM_TYPES.map(t => `${BASE}${t}.png`);
-
-/* accessory / overlay images */
-const ACCESSORY_IMAGES = [
-  `${BASE}books.png`,
-  `${BASE}jacket.png`,
-  `${BASE}bedframe.png`  
-];
-
-/* environment */
-const ENV_IMAGES = [
-  `${BASE}sky.png`,
-  `${BASE}room.png`
-];
-
-/* all images */
-const ALL_IMAGES = [
-  ...OBJECT_IMAGES,
-  ...ACCESSORY_IMAGES,
-  ...ENV_IMAGES
-];
-
-function preloadImages(done){
-  let remaining = ALL_IMAGES.length;
-  ALL_IMAGES.forEach(src=>{
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = ()=>{
-      IMG[src] = img;
-      if(--remaining===0) done();
-    };
-    img.src = src;
-  });
-}
-
-/* call once */
-preloadImages(()=>{
-  renderCatalog();
-  renderRoom?.();
-});
-
-
 /*
 LIMIT HOOKS (inactive):
 MAX_ALL
@@ -519,7 +472,7 @@ clearBtn.onpointercancel = releaseClear;
 
 
 
-/* ---------- CATALOG RENDER (using cached images) ---------- */
+/* ---------- CATALOG RENDER ---------- */
 function renderCatalog(){
   catalog.innerHTML="";
   const idxs=[
@@ -542,10 +495,12 @@ function renderCatalog(){
     d.appendChild(c);
     catalog.appendChild(d);
 
-    // tint main object using cached IMG
-    tintImage(ITEM_TYPES[typeIndex], COLORS[ci], c);
+    tintImage(
+      "https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/"+ITEM_TYPES[typeIndex]+".png",
+      COLORS[ci],
+      c
+    );
 
-    // accessory layers
     if(ITEM_TYPES[typeIndex]==="bookshelf"){
       const b=document.createElement("canvas");
       b.style.position="absolute";
@@ -554,10 +509,13 @@ function renderCatalog(){
       b.style.pointerEvents="none";
       d.appendChild(b);
 
-      const imgB = IMG["books"];
-      b.width  = imgB.width;
-      b.height = imgB.height;
-      b.getContext("2d").drawImage(imgB,0,0);
+      const imgB=new Image();
+      imgB.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/books.png";
+      imgB.onload=()=>{
+        b.width=imgB.width;
+        b.height=imgB.height;
+        b.getContext("2d").drawImage(imgB,0,0);
+      };
     }
 
     if(ITEM_TYPES[typeIndex]==="closet"){
@@ -568,10 +526,13 @@ function renderCatalog(){
       b.style.pointerEvents="none";
       d.appendChild(b);
 
-      const imgB = IMG["jacket"];
-      b.width  = imgB.width;
-      b.height = imgB.height;
-      b.getContext("2d").drawImage(imgB,0,0);
+      const imgB=new Image();
+      imgB.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/jacket.png";
+      imgB.onload=()=>{
+        b.width=imgB.width;
+        b.height=imgB.height;
+        b.getContext("2d").drawImage(imgB,0,0);
+      };
     }
 
     if(ITEM_TYPES[typeIndex]==="bed"){
@@ -582,11 +543,15 @@ function renderCatalog(){
       b.style.pointerEvents="none";
       d.appendChild(b);
 
-      const imgB = IMG["bedframe"];
-      b.width  = imgB.width;
-      b.height = imgB.height;
-      b.getContext("2d").drawImage(imgB,0,0);
+      const imgB=new Image();
+      imgB.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/bedframe.png";
+      imgB.onload=()=>{
+        b.width=imgB.width;
+        b.height=imgB.height;
+        b.getContext("2d").drawImage(imgB,0,0);
+      };
     }
+
 
     d.onpointerdown=e=>{
       e.preventDefault();
@@ -595,53 +560,56 @@ function renderCatalog(){
   });
 }
 
-
 /* ---------- IMAGE TINT ---------- */
 function tintImage(src,color,canvas){
-  const img = IMG[src];              // ← from cache, already loaded
-  const x = canvas.getContext("2d");
+  const img = new Image();
+  img.src = src;
+  img.onload = () => {
+    const x = canvas.getContext("2d");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, canvas.width, canvas.height);
+    const p = d.data;
 
-  canvas.width  = img.width;
-  canvas.height = img.height;
-  x.clearRect(0,0,canvas.width,canvas.height);
-  x.drawImage(img,0,0);
+    if (color.gradient) {
+      // precompute gradient pixels into an array
+      const grad = x.createLinearGradient(0, 0, canvas.width, 0);
+      grad.addColorStop(0, "red");
+      grad.addColorStop(.2, "orange");
+      grad.addColorStop(.4, "yellow");
+      grad.addColorStop(.6, "green");
+      grad.addColorStop(.8, "blue");
+      grad.addColorStop(1, "violet");
 
-  const d = x.getImageData(0,0,canvas.width,canvas.height);
-  const p = d.data;
+      // draw gradient to temp canvas
+      const tmp = document.createElement("canvas");
+      tmp.width = canvas.width;
+      tmp.height = canvas.height;
+      const tx = tmp.getContext("2d");
+      tx.fillStyle = grad;
+      tx.fillRect(0, 0, tmp.width, tmp.height);
+      const gd = tx.getImageData(0, 0, tmp.width, tmp.height).data;
 
-  if(color.gradient){
-    const grad = x.createLinearGradient(0,0,canvas.width,0);
-    grad.addColorStop(0,"red");
-    grad.addColorStop(.2,"orange");
-    grad.addColorStop(.4,"yellow");
-    grad.addColorStop(.6,"green");
-    grad.addColorStop(.8,"blue");
-    grad.addColorStop(1,"violet");
-
-    const tmp = document.createElement("canvas");
-    tmp.width = canvas.width;
-    tmp.height = canvas.height;
-    const tx = tmp.getContext("2d");
-    tx.fillStyle = grad;
-    tx.fillRect(0,0,tmp.width,tmp.height);
-    const gd = tx.getImageData(0,0,tmp.width,tmp.height).data;
-
-    for(let i=0;i<p.length;i+=4){
-      const v = p[i]/255;
-      p[i]   = gd[i]   * v;
-      p[i+1] = gd[i+1] * v;
-      p[i+2] = gd[i+2] * v;
+      // apply grayscale mask
+      for (let i = 0; i < p.length; i += 4) {
+        const v = p[i] / 255; // grayscale
+        p[i]   = gd[i] * v;
+        p[i+1] = gd[i+1] * v;
+        p[i+2] = gd[i+2] * v;
+        // p[i+3] unchanged
+      }
+      x.putImageData(d, 0, 0);
+    } else {
+      for (let i = 0; i < p.length; i += 4) {
+        const v = p[i] / 255;
+        p[i]   = color.rgb[0] * v;
+        p[i+1] = color.rgb[1] * v;
+        p[i+2] = color.rgb[2] * v;
+      }
+      x.putImageData(d, 0, 0);
     }
-  }else{
-    for(let i=0;i<p.length;i+=4){
-      const v = p[i]/255;
-      p[i]   = color.rgb[0] * v;
-      p[i+1] = color.rgb[1] * v;
-      p[i+2] = color.rgb[2] * v;
-    }
-  }
-
-  x.putImageData(d,0,0);
+  };
 }
 
 /* ---------- SIZE CONTROL ---------- */
@@ -787,45 +755,56 @@ if(isWindow){
     if(ev.clientY>tb.top) host.remove();
   };
 
-/* ---------- LOAD IMAGES (from cache) ---------- */
-const mainImg = IMG[type];  // main object image from cache
-mainCanvas.width  = mainImg.width;
-mainCanvas.height = mainImg.height;
-tintImage(type, color, mainCanvas);
+  /* ---------- LOAD IMAGES ---------- */
+  const img=new Image();
+  img.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/"+type+".png";
+  img.onload=()=>{
+    mainCanvas.width=img.width;
+    mainCanvas.height=img.height;
+    tintImage(img.src,color,mainCanvas);
 
-if(isBookshelf){
-  const booksImg = IMG["books"];
-  booksCanvas.width  = booksImg.width;
-  booksCanvas.height = booksImg.height;
-  booksCanvas.getContext("2d").drawImage(booksImg, 0, 0);
+    if(isBookshelf){
+      const imgB=new Image();
+      imgB.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/books.png";
+      imgB.onload=()=>{
+        booksCanvas.width=imgB.width;
+        booksCanvas.height=imgB.height;
+        booksCanvas.getContext("2d").drawImage(imgB,0,0);
+      };
+    }
+	
+	if(isCloset){
+  const imgJ=new Image();
+  imgJ.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/jacket.png";
+  imgJ.onload=()=>{
+    jacketCanvas.width=imgJ.width;
+    jacketCanvas.height=imgJ.height;
+    jacketCanvas.getContext("2d").drawImage(imgJ,0,0);
+  };
 }
 
-if(isCloset){
-  const jacketImg = IMG["jacket"];
-  jacketCanvas.width  = jacketImg.width;
-  jacketCanvas.height = jacketImg.height;
-  jacketCanvas.getContext("2d").drawImage(jacketImg, 0, 0);
+	if(isBed){
+  const imgJ=new Image();
+  imgJ.src="https://raw.githubusercontent.com/alphonsoore/roomdesigner/main/images/bedframe.png";
+  imgJ.onload=()=>{
+    bedframeCanvas.width=imgJ.width;
+    bedframeCanvas.height=imgJ.height;
+    bedframeCanvas.getContext("2d").drawImage(imgJ,0,0);
+  };
 }
+    const s0=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
+    host.style.left=(e.clientX-(mainCanvas.width*s0)/2)+"px";
+    host.style.top =(e.clientY-(mainCanvas.height*s0)/2)+"px";
 
-if(isBed){
-  const bedframeImg = IMG["bedframe"];
-  bedframeCanvas.width  = bedframeImg.width;
-  bedframeCanvas.height = bedframeImg.height;
-  bedframeCanvas.getContext("2d").drawImage(bedframeImg, 0, 0);
+    const r=host.getBoundingClientRect();
+    host.dispatchEvent(new PointerEvent("pointerdown",{
+      pointerId:e.pointerId,
+      clientX:r.left+r.width/2,
+      clientY:r.top +r.height/2,
+      buttons:1
+    }));
+  };
 }
-
-const s0 = parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
-host.style.left = (e.clientX - (mainCanvas.width * s0)/2) + "px";
-host.style.top  = (e.clientY - (mainCanvas.height * s0)/2) + "px";
-
-const r = host.getBoundingClientRect();
-host.dispatchEvent(new PointerEvent("pointerdown", {
-  pointerId: e.pointerId,
-  clientX: r.left + r.width/2,
-  clientY: r.top  + r.height/2,
-  buttons: 1
-}));
-		}
 
 
 
@@ -836,4 +815,3 @@ document.addEventListener("contextmenu",e=>e.preventDefault());
 </script>
 </body>
 </html>
-
