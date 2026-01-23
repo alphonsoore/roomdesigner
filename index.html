@@ -6,7 +6,7 @@
       content="width=device-width, initial-scale=1.0,
                maximum-scale=1.0, user-scalable=no">
 <title>Different Furniture Game</title>
-<link rel="icon" type="image/png" sizes="48x48" href="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/favicon.png">
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon.png">
 
 <style>
 /* ---------- HARD LOCKDOWN ---------- */
@@ -67,7 +67,7 @@ html,body{
 #playspace{
   position:absolute;
   inset:0;
-  background:url("https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/room.png") center/cover no-repeat;
+  background:url("./images/room.png") center/cover no-repeat;
   z-index:1;
 }
 
@@ -338,9 +338,9 @@ background:linear-gradient(to top,#ccc,#fff);
   </div>
 </div>
 
-<audio id="startSound" src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/audio/start.wav"></audio>
-<audio id="drawerSound" src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/audio/drawer.wav"></audio>
-<audio id="clearSound" src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/audio/clear.wav"></audio>
+<audio id="startSound" src="./audio/start.wav"></audio>
+<audio id="drawerSound" src="./audio/drawer.wav"></audio>
+<audio id="clearSound" src="./audio/clear.wav"></audio>
 
 <script>
 /* ---------- CONFIG ---------- */
@@ -496,7 +496,7 @@ function renderCatalog(){
     catalog.appendChild(d);
 
     tintImage(
-      "https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/"+ITEM_TYPES[typeIndex]+".png",
+      "./images/"+ITEM_TYPES[typeIndex]+".png",
       COLORS[ci],
       c
     );
@@ -510,7 +510,7 @@ function renderCatalog(){
       d.appendChild(b);
 
       const imgB=new Image();
-      imgB.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/books.png";
+      imgB.src="./images/books.png";
       imgB.onload=()=>{
         b.width=imgB.width;
         b.height=imgB.height;
@@ -527,7 +527,7 @@ function renderCatalog(){
       d.appendChild(b);
 
       const imgB=new Image();
-      imgB.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/jacket.png";
+      imgB.src="./images/jacket.png";
       imgB.onload=()=>{
         b.width=imgB.width;
         b.height=imgB.height;
@@ -544,7 +544,7 @@ function renderCatalog(){
       d.appendChild(b);
 
       const imgB=new Image();
-      imgB.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/bedframe.png";
+      imgB.src="./images/bedframe.png";
       imgB.onload=()=>{
         b.width=imgB.width;
         b.height=imgB.height;
@@ -661,7 +661,7 @@ if(isWindow){
   sky.className="windowSky";
 
   const v=document.createElement("video");
-  v.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/sky.webm";
+  v.src="./images/sky.webm";
   v.autoplay=true;
   v.loop=true;
   v.muted=true;
@@ -757,7 +757,7 @@ if(isWindow){
 
   /* ---------- LOAD IMAGES ---------- */
   const img=new Image();
-  img.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/"+type+".png";
+  img.src="./images/"+type+".png";
   img.onload=()=>{
     mainCanvas.width=img.width;
     mainCanvas.height=img.height;
@@ -765,7 +765,7 @@ if(isWindow){
 
     if(isBookshelf){
       const imgB=new Image();
-      imgB.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/books.png";
+      imgB.src="./images/books.png";
       imgB.onload=()=>{
         booksCanvas.width=imgB.width;
         booksCanvas.height=imgB.height;
@@ -775,7 +775,7 @@ if(isWindow){
 	
 	if(isCloset){
   const imgJ=new Image();
-  imgJ.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/jacket.png";
+  imgJ.src="./images/jacket.png";
   imgJ.onload=()=>{
     jacketCanvas.width=imgJ.width;
     jacketCanvas.height=imgJ.height;
@@ -785,7 +785,7 @@ if(isWindow){
 
 	if(isBed){
   const imgJ=new Image();
-  imgJ.src="https://cdn.jsdelivr.net/gh/alphonsoore/roomdesigner/images/bedframe.png";
+  imgJ.src="./images/bedframe.png";
   imgJ.onload=()=>{
     bedframeCanvas.width=imgJ.width;
     bedframeCanvas.height=imgJ.height;
