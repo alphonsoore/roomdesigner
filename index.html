@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0,
+               maximum-scale=1.0, user-scalable=no">
+<title>Different Furniture Game</title>
+<link rel="icon" type="image/png" sizes="48x48" href="./favicon.png">
+
+
+<style>
+/* ---------- HARD LOCKDOWN ---------- */
+*{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  touch-action:none;
+}
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:sans-serif;
+}
+
+/* ---------- SPLASH ---------- */
+#splash{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at center,
+    #f6e7cf 0%, #e8d4b0 60%, #cdb48a 100%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+}
+#playBtn{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 8px 0 rgba(0,0,0,.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#playBtn:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.25);}
+#playBtn::before{
+  content:"";
+  border-left:50px solid #c96;
+  border-top:30px solid transparent;
+  border-bottom:30px solid transparent;
+  margin-left:10px;
+}
+
+/* ---------- GAME ---------- */
+#game{
+  position:fixed;
+  inset:0;
+  display:none;
+}
+
+/* ---------- PLAYSPACE ---------- */
+#playspace{
+  position:absolute;
+  inset:0;
+  background:url("./images/room.png") center/cover no-repeat;
+  z-index:1;
+}
+
+/* ---------- TOOLBOX DRAWER ---------- */
+#drawerTab{
+  position:absolute;
+  left:50%;
+  top:-22px;
+  transform:translateX(-50%);
+  width:140px;
+  height:22px;
+  background:#ddd;
+  border-radius:12px 12px 0 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:30;
+}
+#drawerTab::after{
+  content:"▼";
+  font-size:14px;
+}
+.drawerClosed #drawerTab::after{content:"▲";}
+
+#toolbox{
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:100%;
+  height:30%;
+  background:#efe3cf;
+  box-shadow:0 -6px 12px rgba(0,0,0,.3);
+  display:flex;
+  z-index:10;
+  transition:transform .35s ease;
+  overflow:visible;
+}
+.drawerClosed #toolbox{
+  transform:translateY(100%);
+}
+
+/* ---------- LEFT ITEM TYPE ---------- */
+#typeControl{
+  width:12%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-evenly;
+}
+.circleBtn{
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:4px 4px 0 rgba(0,0,0,.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+}
+.circleBtn:active{
+  transform:translate(3px,3px);
+  box-shadow:1px 1px 0 rgba(0,0,0,.25);
+}
+
+/* ---------- CATALOG ---------- */
+#catalog{
+  width:90%;
+  height:80%;
+  margin-top:1%;
+background:linear-gradient(to top,#ccc,#fff);
+  border-left:2px solid #cbb;
+  border-right:2px solid #cbb;
+  display:flex;
+  align-items:center;
+  justify-content:space-evenly;
+  overflow:hidden;
+--fx:1; 
+}
+.catalogItem{
+  position:relative;
+}
+.catalogItem.small canvas{
+  width:5vw;
+  opacity:.4;
+}
+.catalogItem canvas{
+  width:9vw;
+  max-width:82.5px;
+  height:auto;
+  transform:scale(var(--cs,1));
+}
+.catalogFlip canvas{
+  transform:scaleX(-1) scale(var(--cs,1));
+}
+
+#flipBtn{
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:4px 4px 0 rgba(0,0,0,.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+}
+#flipBtn:active{
+  transform:translate(3px,3px);
+  box-shadow:1px 1px 0 rgba(0,0,0,.25);
+}
+
+
+
+/* ---------- RIGHT CONTROL ---------- */
+#rightControl{
+  width:25%;
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:24px;
+  padding-left:24px;
+  padding-right:64px;
+}
+}
+
+#roundControls{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  align-items:center;
+}
+
+#roundControls > div{
+  display:flex;
+  gap:18px;
+  justify-content:center;
+}
+
+#clearBtn{
+  width:112px;
+  height:112px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  box-shadow:4px 4px 0 rgba(0,0,0,.25);
+    position:relative;
+}
+#clearBtn .beneath{
+  position:absolute;
+  bottom:16px;
+  font-size:75%;
+}
+
+
+
+#clearBtn:active{
+  transform:translate(3px,3px);
+  box-shadow:1px 1px 0 rgba(0,0,0,.25);
+}
+@keyframes flashred{
+  from{background:#f00;}
+  to{background:#fff;}
+}
+.flashred{
+  animation:flashred .3s infinite alternate;
+}
+
+#colorControl{
+  display:flex;
+  gap:18px;
+}
+
+/* ---------- PLACED ITEMS ---------- */
+.placed{
+  position:absolute;
+  touch-action:none;
+  z-index:5;
+  transform-origin:center center;
+  transform:scale(var(--s,1));
+  }
+.placed.dragging{ z-index:50; }
+
+.placed.door      { --s:0.30; }
+.placed.window    { --s:0.18; }
+.placed.bed       { --s:0.25; }
+.placed.closet    { --s:0.22; }
+.placed.clock     { --s:0.12; }
+.placed.pillow    { --s:0.10; }
+.placed.table     { --s:0.18; }
+.placed.lamp      { --s:0.15; }
+.placed.bookshelf { --s:0.20; }
+.placed.calendar  { --s:0.12; }
+.placed.desk      { --s:0.19; }
+.placed.chair     { --s:0.16; }
+
+.placed.flip{
+  transform:scaleX(-1) scale(var(--s,1));
+}
+
+.windowSky{
+  position:absolute;
+  inset:10%;
+  z-index:0;
+  overflow:hidden;
+}
+.windowSky video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  pointer-events:none;
+}
+
+.window{position:absolute;z-index:1}
+
+
+
+/* ---------- FLASH DELETE ---------- */
+.flash{
+  animation:flash 0.4s infinite alternate;
+}
+@keyframes flash{
+  from{background:#efe3cf;}
+  to{background:#ff0;}
+}
+</style>
+</head>
+
+<body>
+<video id="sky" autoplay loop muted playsinline></video>
+<div id="splash">
+  <div id="playBtn"></div>
+</div>
+
+<div id="game">
+  <div id="playspace"></div>
+
+  <div id="toolbox">
+    <div id="drawerTab"></div>
+    <div id="typeControl">
+      <div id="typeUp" class="circleBtn">▲</div>
+      <div id="typeDown" class="circleBtn">▼</div>
+    </div>
+
+    <div id="catalogWrap" style="width:63%;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;">
+	  <div id="catalog"></div>
+
+	</div>
+
+<div id="rightControl">
+  <div id="roundControls">
+    <div style="display:flex;gap:18px;">
+      <div id="colorLeft" class="circleBtn">◀</div>
+      <div id="flipBtn" class="circleBtn">⇄</div>
+      <div id="colorRight" class="circleBtn">▶</div>
+    </div>
+	<br>
+    <div style="display:flex;gap:18px;">
+      <div id="sizeDown" class="circleBtn">−</div>
+      <div id="sizeUp" class="circleBtn">+</div>
+    </div>
+  </div>
+  <div id="clearBtn">CLEAR<span class="beneath">ながおし</span></div></div>
+</div>
+
+	      
+  </div>
+</div>
+
+<audio id="startSound" src="./audio/start.wav"></audio>
+<audio id="drawerSound" src="./audio/drawer.wav"></audio>
+
+<script>
+/* ---------- CONFIG ---------- */
+const ITEM_TYPES=[
+"door","window","bed","closet","clock","pillow",
+"table","lamp","bookshelf","calendar","desk","chair"
+];
+
+const COLORS=[
+{name:"brown", rgb:[140,90,40]},
+{name:"red", rgb:[200,40,40]},
+{name:"orange", rgb:[220,130,40]},
+{name:"yellow", rgb:[220,200,40]},
+{name:"lightgreen", rgb:[170,220,120]},
+{name:"green", rgb:[60,160,60]},
+{name:"blue", rgb:[60,80,200]},
+{name:"lightblue", rgb:[120,180,220]},
+{name:"purple", rgb:[120,60,160]},
+{name:"lavender", rgb:[180,140,220]},
+{name:"pink", rgb:[220,120,160]},
+{name:"black", rgb:[30,30,30]},
+{name:"white", rgb:[230,230,230]},
+{name:"rainbow", gradient:true}
+];
+
+/*
+LIMIT HOOKS (inactive):
+MAX_ALL
+MAX_TYPE[type]
+MAX_TYPE_COLOR[type][color]
+*/
+
+/* ---------- STATE ---------- */
+let typeIndex=0;
+let colorIndex=1;
+let drawerOpen=true;
+
+/* ---------- FULLSCREEN ---------- */
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen();
+}
+
+/* ---------- SPLASH ---------- */
+startSound.volume = 0.1;
+
+playBtn.onpointerdown=()=>{
+  startSound.play();
+  goFullscreen();
+  splash.style.display="none";
+  game.style.display="block";
+  updateSizeButtons();
+  renderCatalog();
+};
+
+/* ---------- DRAWER ---------- */
+drawerTab.onpointerdown=()=>{
+  drawerOpen=!drawerOpen;
+  game.classList.toggle("drawerClosed",!drawerOpen);
+  drawerSound.play();
+};
+
+/* ---------- FLIP CONTROL ---------- */
+let flipped=false;
+
+flipBtn.onpointerdown=()=>{
+  flipped=!flipped;
+  catalog.classList.toggle("catalogFlip",flipped);
+};
+
+/* ---------- TYPE CONTROL ---------- */
+typeUp.onpointerdown=()=>{
+  typeIndex=(typeIndex+1)%ITEM_TYPES.length;
+  renderCatalog();
+};
+typeDown.onpointerdown=()=>{
+  typeIndex=(typeIndex-1+ITEM_TYPES.length)%ITEM_TYPES.length;
+  renderCatalog();
+};
+
+/* ---------- COLOR CONTROL ---------- */
+colorRight.onpointerdown=()=>{
+  colorIndex=(colorIndex+1)%COLORS.length;
+  renderCatalog();
+};
+colorLeft.onpointerdown=()=>{
+  colorIndex=(colorIndex-1+COLORS.length)%COLORS.length;
+  renderCatalog();
+};
+
+/* ---------- CLEAR ---------- */
+let armed=false, isDown=false;
+let armTimer=null, disarmTimer=null;
+
+clearBtn.onpointerdown=()=>{
+  isDown=true;
+  armed=false;
+  clearBtn.classList.remove("flashred");
+
+  armTimer=setTimeout(()=>{
+    if(!isDown) return;
+    armed=true;
+    clearBtn.classList.add("flashred");
+  },2000);
+
+  disarmTimer=setTimeout(()=>{
+    armed=false;
+    clearBtn.classList.remove("flashred");
+  },5000);
+};
+
+function releaseClear(){
+  if(isDown && armed){
+    document.querySelectorAll(".placed").forEach(e=>e.remove());
+  }
+
+  // HARD DISARM
+  isDown=false;
+  armed=false;
+  clearBtn.classList.remove("flashred");
+  clearTimeout(armTimer);
+  clearTimeout(disarmTimer);
+}
+
+clearBtn.onpointerup = releaseClear;
+clearBtn.onpointerleave = releaseClear;
+clearBtn.onpointercancel = releaseClear;
+
+
+
+/* ---------- CATALOG RENDER ---------- */
+function renderCatalog(){
+  catalog.innerHTML="";
+  const idxs=[
+    (colorIndex-2+COLORS.length)%COLORS.length,
+    (colorIndex-1+COLORS.length)%COLORS.length,
+    colorIndex,
+    (colorIndex+1)%COLORS.length,
+    (colorIndex+2)%COLORS.length
+  ];
+
+  catalog.style.setProperty("--cs",1+(sizeStep-2)*0.12);
+  catalog.classList.add("catalogSize");
+
+  idxs.forEach((ci,i)=>{
+    const d=document.createElement("div");
+    d.className="catalogItem"+((i===0||i===4)?" small":"");
+    d.style.position="relative";
+
+    const c=document.createElement("canvas");
+    d.appendChild(c);
+    catalog.appendChild(d);
+
+    tintImage(
+      "./images/"+ITEM_TYPES[typeIndex]+".png",
+      COLORS[ci],
+      c
+    );
+
+    if(ITEM_TYPES[typeIndex]==="bookshelf"){
+      const b=document.createElement("canvas");
+      b.style.position="absolute";
+      b.style.left="0";
+      b.style.top="0";
+      b.style.pointerEvents="none";
+      d.appendChild(b);
+
+      const imgB=new Image();
+      imgB.src="./images/books.png";
+      imgB.onload=()=>{
+        b.width=imgB.width;
+        b.height=imgB.height;
+        b.getContext("2d").drawImage(imgB,0,0);
+      };
+    }
+
+    if(ITEM_TYPES[typeIndex]==="closet"){
+      const b=document.createElement("canvas");
+      b.style.position="absolute";
+      b.style.left="0";
+      b.style.top="0";
+      b.style.pointerEvents="none";
+      d.appendChild(b);
+
+      const imgB=new Image();
+      imgB.src="./images/jacket.png";
+      imgB.onload=()=>{
+        b.width=imgB.width;
+        b.height=imgB.height;
+        b.getContext("2d").drawImage(imgB,0,0);
+      };
+    }
+
+    if(ITEM_TYPES[typeIndex]==="bed"){
+      const b=document.createElement("canvas");
+      b.style.position="absolute";
+      b.style.left="0";
+      b.style.top="0";
+      b.style.pointerEvents="none";
+      d.appendChild(b);
+
+      const imgB=new Image();
+      imgB.src="./images/bedframe.png";
+      imgB.onload=()=>{
+        b.width=imgB.width;
+        b.height=imgB.height;
+        b.getContext("2d").drawImage(imgB,0,0);
+      };
+    }
+
+
+    d.onpointerdown=e=>{
+      e.preventDefault();
+      spawnItem(e,COLORS[ci]);
+    };
+  });
+}
+
+/* ---------- IMAGE TINT ---------- */
+function tintImage(src,color,canvas){
+  const img = new Image();
+  img.src = src;
+  img.onload = () => {
+    const x = canvas.getContext("2d");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, canvas.width, canvas.height);
+    const p = d.data;
+
+    if (color.gradient) {
+      // precompute gradient pixels into an array
+      const grad = x.createLinearGradient(0, 0, canvas.width, 0);
+      grad.addColorStop(0, "red");
+      grad.addColorStop(.2, "orange");
+      grad.addColorStop(.4, "yellow");
+      grad.addColorStop(.6, "green");
+      grad.addColorStop(.8, "blue");
+      grad.addColorStop(1, "violet");
+
+      // draw gradient to temp canvas
+      const tmp = document.createElement("canvas");
+      tmp.width = canvas.width;
+      tmp.height = canvas.height;
+      const tx = tmp.getContext("2d");
+      tx.fillStyle = grad;
+      tx.fillRect(0, 0, tmp.width, tmp.height);
+      const gd = tx.getImageData(0, 0, tmp.width, tmp.height).data;
+
+      // apply grayscale mask
+      for (let i = 0; i < p.length; i += 4) {
+        const v = p[i] / 255; // grayscale
+        p[i]   = gd[i] * v;
+        p[i+1] = gd[i+1] * v;
+        p[i+2] = gd[i+2] * v;
+        // p[i+3] unchanged
+      }
+      x.putImageData(d, 0, 0);
+    } else {
+      for (let i = 0; i < p.length; i += 4) {
+        const v = p[i] / 255;
+        p[i]   = color.rgb[0] * v;
+        p[i+1] = color.rgb[1] * v;
+        p[i+2] = color.rgb[2] * v;
+      }
+      x.putImageData(d, 0, 0);
+    }
+  };
+}
+
+/* ---------- SIZE CONTROL ---------- */
+const SIZE_STEPS = [0.25, 0.5, 0.65, 0.8, 1.0, 1.25, 1.5];
+let sizeStep = 4;
+// let sizeStep = 3; // 0, 1, 2, *3*
+// let sizeStep = Math.floor(SIZE_STEPS.length / 2); // Exact middle (or even low)
+
+function updateSizeButtons(){
+  sizeDown.style.opacity = sizeStep===0 ? .3 : 1;
+  sizeUp.style.opacity   = sizeStep===SIZE_STEPS.length-1 ? .3 : 1;
+}
+
+sizeUp.onpointerdown=()=>{
+  if(sizeStep<SIZE_STEPS.length-1){
+    sizeStep++;
+    renderCatalog();
+    updateSizeButtons();
+  }
+};
+
+sizeDown.onpointerdown=()=>{
+  if(sizeStep>0){
+    sizeStep--;
+    renderCatalog();
+    updateSizeButtons();
+  }
+};
+
+/* ---------- SPAWN ---------- */
+function spawnItem(e,color){
+  const type = ITEM_TYPES[typeIndex];
+  const isWindow = type==="window";
+  const isBookshelf = type==="bookshelf";
+  const isCloset = type==="closet";
+  const isBed = type==="bed";
+
+  let host, mainCanvas, booksCanvas, jacketCanvas, bedframeCanvas;
+
+  /* ---------- HOST ---------- */
+  if(isWindow || isBookshelf || isCloset || isBed){
+    host=document.createElement("div");
+    host.className="placed "+type;
+    host.style.position="absolute";
+    game.appendChild(host);
+
+if(isWindow){
+  const sky=document.createElement("div");
+  sky.className="windowSky";
+
+  const v=document.createElement("video");
+  v.src="./images/sky.webm";
+  v.autoplay=true;
+  v.loop=true;
+  v.muted=true;
+  v.playsInline=true;
+
+  sky.appendChild(v);
+  host.appendChild(sky);
+}
+
+    mainCanvas=document.createElement("canvas");
+    mainCanvas.style.position="relative";
+    mainCanvas.style.zIndex="1";
+    host.appendChild(mainCanvas);
+
+    if(isBookshelf){
+      booksCanvas=document.createElement("canvas");
+      booksCanvas.style.position="absolute";
+      booksCanvas.style.left="0";
+      booksCanvas.style.top="0";
+      booksCanvas.style.zIndex="2";
+      booksCanvas.style.pointerEvents="none";
+      host.appendChild(booksCanvas);
+    }
+	if(isCloset){
+  jacketCanvas=document.createElement("canvas");
+  jacketCanvas.style.position="absolute";
+  jacketCanvas.style.left="0";
+  jacketCanvas.style.top="0";
+  jacketCanvas.style.zIndex="2";
+  jacketCanvas.style.pointerEvents="none";
+  host.appendChild(jacketCanvas);
+}
+		if(isBed){
+  bedframeCanvas=document.createElement("canvas");
+  bedframeCanvas.style.position="absolute";
+  bedframeCanvas.style.left="0";
+  bedframeCanvas.style.top="0";
+  bedframeCanvas.style.zIndex="2";
+  bedframeCanvas.style.pointerEvents="none";
+  host.appendChild(bedframeCanvas);
+}
+	
+    if(flipped) host.classList.add("flip");
+
+    const baseScale=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
+    host.style.setProperty("--s",baseScale*SIZE_STEPS[sizeStep]);
+  }else{
+    mainCanvas=document.createElement("canvas");
+    mainCanvas.className="placed "+type;
+    game.appendChild(mainCanvas);
+    if(flipped) mainCanvas.classList.add("flip");
+
+    const baseScale=parseFloat(getComputedStyle(mainCanvas).getPropertyValue("--s")||1);
+    mainCanvas.style.setProperty("--s",baseScale*SIZE_STEPS[sizeStep]);
+
+    host=mainCanvas;
+  }
+
+  /* ---------- DRAG ---------- */
+  let ox=0,oy=0,firstGrab=true;
+
+  host.onpointerdown=ev=>{
+    const s=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
+    if(firstGrab){
+      const r=mainCanvas.getBoundingClientRect();
+      ox=(mainCanvas.width/2)/s;
+      oy=(mainCanvas.height/2)/s;
+      firstGrab=false;
+    }else{
+      ox=(ev.clientX-host.offsetLeft)/s;
+      oy=(ev.clientY-host.offsetTop)/s;
+    }
+    host.classList.add("dragging");
+    host.setPointerCapture(ev.pointerId);
+  };
+
+  host.onpointermove=ev=>{
+    if(ev.buttons){
+      const s=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
+      host.style.left=(ev.clientX-ox*s)+"px";
+      host.style.top =(ev.clientY-oy*s)+"px";
+      const tb=toolbox.getBoundingClientRect();
+      toolbox.classList.toggle("flash",ev.clientY>tb.top);
+    }
+  };
+
+  host.onpointerup=ev=>{
+    host.classList.remove("dragging");
+    toolbox.classList.remove("flash");
+    const tb=toolbox.getBoundingClientRect();
+    if(ev.clientY>tb.top) host.remove();
+  };
+
+  /* ---------- LOAD IMAGES ---------- */
+  const img=new Image();
+  img.src="./images/"+type+".png";
+  img.onload=()=>{
+    mainCanvas.width=img.width;
+    mainCanvas.height=img.height;
+    tintImage(img.src,color,mainCanvas);
+
+    if(isBookshelf){
+      const imgB=new Image();
+      imgB.src="./images/books.png";
+      imgB.onload=()=>{
+        booksCanvas.width=imgB.width;
+        booksCanvas.height=imgB.height;
+        booksCanvas.getContext("2d").drawImage(imgB,0,0);
+      };
+    }
+	
+	if(isCloset){
+  const imgJ=new Image();
+  imgJ.src="./images/jacket.png";
+  imgJ.onload=()=>{
+    jacketCanvas.width=imgJ.width;
+    jacketCanvas.height=imgJ.height;
+    jacketCanvas.getContext("2d").drawImage(imgJ,0,0);
+  };
+}
+
+	if(isBed){
+  const imgJ=new Image();
+  imgJ.src="./images/bedframe.png";
+  imgJ.onload=()=>{
+    bedframeCanvas.width=imgJ.width;
+    bedframeCanvas.height=imgJ.height;
+    bedframeCanvas.getContext("2d").drawImage(imgJ,0,0);
+  };
+}
+    const s0=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
+    host.style.left=(e.clientX-(mainCanvas.width*s0)/2)+"px";
+    host.style.top =(e.clientY-(mainCanvas.height*s0)/2)+"px";
+
+    const r=host.getBoundingClientRect();
+    host.dispatchEvent(new PointerEvent("pointerdown",{
+      pointerId:e.pointerId,
+      clientX:r.left+r.width/2,
+      clientY:r.top +r.height/2,
+      buttons:1
+    }));
+  };
+}
+
+
+
+
+
+/* ---------- BLOCK CONTEXT ---------- */
+document.addEventListener("contextmenu",e=>e.preventDefault());
+</script>
+</body>
+</html>
