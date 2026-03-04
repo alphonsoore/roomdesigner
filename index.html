@@ -910,6 +910,12 @@ function takeScreenshot(){
   });
 }
 
+document.getElementById("screenshotBtn").onpointerdown = e => {
+  e.preventDefault();
+  e.stopPropagation();
+  takeScreenshot();
+};
+
 /* ---------- SAVE / LOAD ---------- */
 function saveRoom(){
   const rr = getRoomRect();
