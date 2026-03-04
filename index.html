@@ -302,14 +302,66 @@ background:linear-gradient(to top,#ccc,#fff);
 
 .window{position:absolute;z-index:1}
 
-/* ---------- ADMIN LOCK ---------- */
-.adminLocked #toolbox,
-.adminLocked #drawerTab {
-  visibility: hidden;
-  pointer-events: none;
+/* ---------- INFO BUTTON ---------- */
+#infoBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 3px 3px 0 rgba(0,0,0,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-style: italic;
+  font-size: 15px;
+  font-family: Georgia, serif;
+  z-index: 20;
+  cursor: pointer;
 }
-.adminLocked .placed {
-  pointer-events: none;
+#infoBtn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 rgba(0,0,0,.25);
+}
+
+/* ---------- INFO OVERLAY ---------- */
+#infoOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+#infoOverlay.open {
+  display: flex;
+}
+#infoBox {
+  background: rgba(220, 200, 170, 0.92);
+  box-shadow: 8px 8px 0 rgba(0,0,0,.3);
+  padding: 36px 40px;
+  width: 75%;
+  max-width: 85vw;
+}
+#infoTitle {
+  font-size: 26px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 24px;
+  font-family: sans-serif;
+}
+#infoColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  font-size: 12px;
+  line-height: 1.6;
+  font-family: sans-serif;
+}
+#infoColumns p {
+  margin: 0;
 }
 
 /* ---------- FLASH DELETE ---------- */
@@ -320,6 +372,17 @@ background:linear-gradient(to top,#ccc,#fff);
   from{background:#efe3cf;}
   to{background:#ff0;}
 }
+
+/* ---------- ADMIN LOCK ---------- */
+.adminLocked #toolbox,
+.adminLocked #drawerTab {
+  visibility: hidden;
+  pointer-events: none;
+}
+.adminLocked .placed {
+  pointer-events: none;
+}
+
 </style>
 </head>
 
@@ -358,6 +421,7 @@ background:linear-gradient(to top,#ccc,#fff);
     </div>
   </div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+  <div id="infoBtn">i</div>
     <div id="clearBtn">CLEAR<span class="beneath">ながおし</span></div>
     <div style="display:flex;gap:10px;">
       <div id="screenshotBtn">📷</div>
@@ -366,6 +430,36 @@ background:linear-gradient(to top,#ccc,#fff);
   </div>
 </div>
 
+
+<div id="infoOverlay">
+  <div id="infoBox">
+    <div id="infoTitle">Room Designer</div>
+    <div id="infoColumns">
+      <p>Students should say, "This is my room. I have ..." <br> Objects are best described following this model: <br><i> "I have [number] [size] [color] [thing]." </i> <br> Examples: <br> "I have ten big blue windows." <br> "I have a small green chair." <br> "I have many mini rainbow clocks." <br><br>
+	  Students can change the type of object by pressing ▲▼. <br>
+	  Students can cycle through the colors by pressing ◀▶. <br>
+	  Students can flip an object by pressing ⇄. <br>
+	  If a student holds down CLEAR until it is flashing, it will clear everything! Wait a bit and it will disarm.<br>
+	  If a student presses 📷, it will capture a .PNG image of the current room. <br>
+	  If a student presses 💾, the room arrangement will be saved, and we should be able to see it again! <br>
+	  </p>
+<p>児童は「This is my room. I have ...」と言います。<br>
+次のモデルにそって言います。<br>
+<i>「I have [数] [大小] [色] [物].」</i><br>
+例：<br>
+ "I have ten big blue windows."「私は大きい青い窓を10枚持っています。」<br>
+"I have a small green chair."「私は小さい緑のいすを1つ持っています。」<br>
+"I have many mini rainbow clocks."「私は小さい虹色の時計をたくさん持っています。」<br><br>
+児童は▲▼を押すと、物の種類を変えます。<br>
+◀▶を押すと、色を変えます。<br>
+⇄を押すと、物を反転します。<br>
+CLEARを光るまで長押しすると、全部消えます。少し待つと解除します。<br>
+📷を押すと、今の部屋を.PNG画像で保存します。<br>
+💾を押すと、部屋の配置を保存します。あとでまた見られます！<br>
+</p>
+    </div>
+  </div>
+</div>
 	      
   </div>
 </div>
@@ -427,6 +521,15 @@ playBtn.onpointerdown=()=>{
   updateSizeButtons();
   initRoomNaturalSize();
   renderCatalog();
+};
+
+/* ---------- INFO BOX ---------- */
+document.getElementById("infoBtn").onpointerdown = e => {
+  e.stopPropagation();
+  document.getElementById("infoOverlay").classList.add("open");
+};
+document.getElementById("infoOverlay").onpointerdown = () => {
+  document.getElementById("infoOverlay").classList.remove("open");
 };
 
 /* ---------- ROOM RECT ---------- */
