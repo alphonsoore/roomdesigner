@@ -192,6 +192,7 @@ background:linear-gradient(to top,#ccc,#fff);
   padding-left:24px;
   padding-right:64px;
 }
+}
 
 #roundControls{
   display:flex;
@@ -222,28 +223,7 @@ background:linear-gradient(to top,#ccc,#fff);
   font-size:75%;
 }
 
-/* ---------- SAVE / SCREENSHOT BUTTONS ---------- */
-#extraButtons{
-  display:flex;
-  gap:18px;
-  justify-content:center;
-  margin-top:18px;
-}
 
-.smallSquare{
-  width:56px;
-  height:56px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#fff;
-  box-shadow:4px 4px 0 rgba(0,0,0,.25);
-}
-
-.smallSquare:active{
-  transform:translate(3px,3px);
-  box-shadow:1px 1px 0 rgba(0,0,0,.25);
-}
 
 #clearBtn:active{
   transform:translate(3px,3px);
@@ -352,10 +332,6 @@ background:linear-gradient(to top,#ccc,#fff);
     </div>
   </div>
   <div id="clearBtn">CLEAR<span class="beneath">ながおし</span></div></div>
-  <div id="extraButtons">
-  <div id="saveBtn" class="smallSquare">SAVE</div>
-  <div id="shotBtn" class="smallSquare">SHOT</div>
-</div>
 </div>
 
 	      
@@ -494,15 +470,6 @@ clearBtn.onpointerup = releaseClear;
 clearBtn.onpointerleave = releaseClear;
 clearBtn.onpointercancel = releaseClear;
 
-/* ---------- SAVE BUTTON ---------- */
-saveBtn.onpointerdown=()=>{
-  saveLayout();
-};
-
-/* ---------- SCREENSHOT BUTTON ---------- */
-shotBtn.onpointerdown=()=>{
-  screenshotPlayspace();
-};
 
 
 /* ---------- CATALOG RENDER ---------- */
@@ -825,122 +792,12 @@ if(isWindow){
   };
 }
 
-/* ---------- STOP TOGGLE ---------- */
-let stopped=false;
-const stopKeys=new Set();
 
-function updateStopState(){
-  stopped=!stopped;
 
-  // force drawer closed when stopped
-  if(stopped){
-    drawerOpen=false;
-    game.classList.add("drawerClosed");
-  }
 
-  // disable dragging
-  document.querySelectorAll(".placed").forEach(el=>{
-    el.style.pointerEvents=stopped?"none":"auto";
-  });
-}
-
-document.addEventListener("keydown",e=>{
-  stopKeys.add(e.key.toLowerCase());
-  if(stopKeys.has("s") && stopKeys.has("t") && stopKeys.has("o")){
-    updateStopState();
-  }
-});
-
-document.addEventListener("keyup",e=>{
-  stopKeys.delete(e.key.toLowerCase());
-});
-
-/* ---------- SAVE / LOAD ---------- */
-function saveLayout(){
-  const items=[...document.querySelectorAll(".placed")].map(el=>{
-    return{
-      type:[...el.classList].find(c=>ITEM_TYPES.includes(c)),
-      left:el.style.left,
-      top:el.style.top,
-      scale:getComputedStyle(el).getPropertyValue("--s"),
-      flip:el.classList.contains("flip"),
-      colorIndex:colorIndex
-    };
-  });
-  localStorage.setItem("roomLayout",JSON.stringify(items));
-}
-
-function loadLayout(){
-  const data=localStorage.getItem("roomLayout");
-  if(!data) return;
-
-  JSON.parse(data).forEach(item=>{
-    typeIndex=ITEM_TYPES.indexOf(item.type);
-spawnItem({clientX:0,clientY:0,pointerId:1}, COLORS[item.colorIndex||1]);
-
-// immediately disable auto-drag
-const el=document.querySelectorAll(".placed");
-const last=el[el.length-1];
-last.onpointerdown=null;
-last.onpointermove=null;
-last.onpointerup=null;
-
-    const el=document.querySelectorAll(".placed");
-    const last=el[el.length-1];
-
-    last.style.left=item.left;
-    last.style.top=item.top;
-    last.style.setProperty("--s",item.scale);
-    if(item.flip) last.classList.add("flip");
-  });
-}
-
-loadLayout();
-
-/* ---------- SCREENSHOT ---------- */
-function screenshotPlayspace(){
-  const rect=playspace.getBoundingClientRect();
-  const canvas=document.createElement("canvas");
-  canvas.width=rect.width;
-  canvas.height=rect.height;
-
-  const ctx=canvas.getContext("2d");
-
-  // draw background
-const bg=new Image();
-bg.crossOrigin="anonymous";
-  bg.src="./images/room.png";
-  bg.onload=()=>{
-    ctx.drawImage(bg,0,0,canvas.width,canvas.height);
-
-    // draw each placed item
-document.querySelectorAll(".placed").forEach(el=>{
-  const r=el.getBoundingClientRect();
-  const x=r.left-rect.left;
-  const y=r.top-rect.top;
-
-  el.querySelectorAll("canvas").forEach(c=>{
-    ctx.drawImage(c,x,y,r.width,r.height);
-  });
-});
-
-    const url=canvas.toDataURL("image/png");
-
-    // OPTION A: auto download
-    const a=document.createElement("a");
-    a.href=url;
-    a.download="room.png";
-    a.click();
-
-    // OPTION B: open in new tab (background usually browser-controlled)
-    /*
-    window.open(url,"_blank");
-    */
-  };
 
 /* ---------- BLOCK CONTEXT ---------- */
 document.addEventListener("contextmenu",e=>e.preventDefault());
-}
 </script>
 </body>
 </html>
