@@ -208,8 +208,8 @@ background:linear-gradient(to top,#ccc,#fff);
 }
 
 #clearBtn{
-  width:112px;
-  height:112px;
+  width:92px;
+  height:92px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -897,25 +897,33 @@ function takeScreenshot(){
   canvas.height = h;
   const ctx = canvas.getContext("2d");
 
-  const bgImg = new Image();
-  bgImg.src = "./images/room.png";
-  bgImg.onload = () => {
-    // Draw background exactly as CSS cover renders it
-    ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
+  function restore(){
+    toolbox.style.visibility   = "";
+    drawerTab.style.visibility = "";
+  }
 
-    const placedEls = Array.from(document.querySelectorAll("#game .placed"));
-    let pending = 0;
-
-    function finish(){
-      toolbox.style.visibility   = "";
-      drawerTab.style.visibility = "";
+  function finish(){
+    restore();
+    try {
       const a = document.createElement("a");
       a.download = "room.png";
       a.href = canvas.toDataURL("image/png");
       a.click();
+    } catch(err) {
+      restore();
+      alert("Screenshot blocked: " + err.message);
     }
+  }
 
+  const bgImg = new Image();
+  bgImg.crossOrigin = "anonymous";
+  bgImg.onload = () => {
+    ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
+
+    const placedEls = Array.from(document.querySelectorAll("#game .placed"));
     if(placedEls.length === 0){ finish(); return; }
+
+    let pending = 0;
 
     placedEls.forEach(el => {
       const hostRect = el.getBoundingClientRect();
@@ -925,21 +933,33 @@ function takeScreenshot(){
 
       canvases.forEach(c => {
         pending++;
-        createImageBitmap(c).then(bmp => {
-          ctx.drawImage(bmp,
-            hostRect.left, hostRect.top,
-            hostRect.width, hostRect.height
-          );
-          bmp.close();
+        // Use toDataURL on the source canvas directly, then draw via Image
+        // to avoid SecurityError from createImageBitmap on tainted canvases
+        let dataURL;
+        try { dataURL = c.toDataURL(); } catch(e) {
           pending--;
           if(pending === 0) finish();
-        }).catch(() => {
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, hostRect.left, hostRect.top, hostRect.width, hostRect.height);
           pending--;
           if(pending === 0) finish();
-        });
+        };
+        img.onerror = () => {
+          pending--;
+          if(pending === 0) finish();
+        };
+        img.src = dataURL;
       });
     });
   };
+  bgImg.onerror = () => {
+    restore();
+    alert("Could not load room background for screenshot.");
+  };
+  bgImg.src = "./images/room.png";
 }
 
 document.getElementById("screenshotBtn").onpointerdown = e => {
