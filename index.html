@@ -7,7 +7,7 @@
                maximum-scale=1.0, user-scalable=no">
 <title>Different Furniture Game</title>
 <link rel="icon" type="image/png" sizes="48x48" href="./favicon.png">
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ---------- HARD LOCKDOWN ---------- */
 *{
@@ -879,7 +879,6 @@ if(isWindow){
 }
 
 /* ---------- SCREENSHOT ---------- */
-/* ---------- SCREENSHOT ---------- */
 let screenshotPending = false;
 
 function takeScreenshot(){
@@ -891,56 +890,25 @@ function takeScreenshot(){
   toolbox.style.visibility   = "hidden";
   drawerTab.style.visibility = "hidden";
 
-  function restore(){
+  html2canvas(document.getElementById("game"), {
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: null
+  }).then(canvas => {
     toolbox.style.visibility   = "";
     drawerTab.style.visibility = "";
     screenshotPending = false;
-  }
-
-  const rr = getRoomRect();
-  const w  = window.innerWidth;
-  const h  = window.innerHeight;
-  const out = document.createElement("canvas");
-  out.width  = w;
-  out.height = h;
-  const ctx = out.getContext("2d");
-
-const bgImg = getRoomRect._img;
-  if(!bgImg){
-    alert("Background not ready.");
-    restore();
-    return;
-  }
-  ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
-
-  const placedEls = Array.from(document.querySelectorAll("#game .placed"));
-  placedEls.forEach(el => {
-    const hostRect = el.getBoundingClientRect();
-    const canvases = el.tagName === "CANVAS"
-      ? [el]
-      : Array.from(el.querySelectorAll("canvas"));
-    canvases.forEach(c => {
-      if(!c._ready) return;
-      ctx.drawImage(c, hostRect.left, hostRect.top, hostRect.width, hostRect.height);
-    });
-  });
-
-  try {
     const a = document.createElement("a");
     a.download = "room.png";
-    a.href = out.toDataURL("image/png");
+    a.href = canvas.toDataURL("image/png");
     a.click();
-  } catch(err) {
+  }).catch(err => {
+    toolbox.style.visibility   = "";
+    drawerTab.style.visibility = "";
+    screenshotPending = false;
     alert("Screenshot failed: " + err.message);
-  }
-  restore();
+  });
 }
-
-document.getElementById("screenshotBtn").onpointerdown = e => {
-  e.preventDefault();
-  e.stopPropagation();
-  takeScreenshot();
-};
 
 /* ---------- SAVE / LOAD ---------- */
 function saveRoom(){
