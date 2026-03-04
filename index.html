@@ -641,13 +641,9 @@ function tintImage(src, color, canvas) {
     const ctx = canvas.getContext("2d");
     canvas.width = img.width;
     canvas.height = img.height;
-
-    // draw grayscale image
     ctx.drawImage(img, 0, 0);
-
-    // tint overlay
     ctx.globalCompositeOperation = "multiply";
-    if (color.gradient) {
+    if(color.gradient){
       const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
       grad.addColorStop(0, "red");
       grad.addColorStop(0.2, "orange");
@@ -660,13 +656,10 @@ function tintImage(src, color, canvas) {
       ctx.fillStyle = `rgb(${color.rgb[0]},${color.rgb[1]},${color.rgb[2]})`;
     }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // reapply alpha mask
     ctx.globalCompositeOperation = "destination-in";
     ctx.drawImage(img, 0, 0);
-
-    // reset
     ctx.globalCompositeOperation = "source-over";
+    canvas._ready = true;  // ← mark canvas as fully drawn
   };
 }
 
@@ -835,6 +828,7 @@ if(isWindow){
         booksCanvas.width=imgB.width;
         booksCanvas.height=imgB.height;
         booksCanvas.getContext("2d").drawImage(imgB,0,0);
+		booksCanvas._ready = true;
       };
     }
 	
@@ -845,6 +839,7 @@ if(isWindow){
     jacketCanvas.width=imgJ.width;
     jacketCanvas.height=imgJ.height;
     jacketCanvas.getContext("2d").drawImage(imgJ,0,0);
+	jacketCanvas._ready = true;
   };
 }
 
@@ -855,6 +850,7 @@ if(isWindow){
     bedframeCanvas.width=imgJ.width;
     bedframeCanvas.height=imgJ.height;
     bedframeCanvas.getContext("2d").drawImage(imgJ,0,0);
+	bedframeCanvas._ready = true;
   };
 }
     const s0=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
@@ -883,87 +879,69 @@ if(isWindow){
 }
 
 /* ---------- SCREENSHOT ---------- */
+/* ---------- SCREENSHOT ---------- */
+let screenshotPending = false;
+
 function takeScreenshot(){
+  if(screenshotPending) return;
+  screenshotPending = true;
+
   const toolbox   = document.getElementById("toolbox");
   const drawerTab = document.getElementById("drawerTab");
   toolbox.style.visibility   = "hidden";
   drawerTab.style.visibility = "hidden";
 
-  const rr = getRoomRect();
-  const w  = window.innerWidth;
-  const h  = window.innerHeight;
-  const canvas = document.createElement("canvas");
-  canvas.width  = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-
   function restore(){
     toolbox.style.visibility   = "";
     drawerTab.style.visibility = "";
+    screenshotPending = false;
   }
 
-  function finish(){
-    restore();
-    try {
-      const a = document.createElement("a");
-      a.download = "room.png";
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    } catch(err) {
-      restore();
-      alert("Screenshot blocked: " + err.message);
-    }
-  }
+  const rr = getRoomRect();
+  const w  = window.innerWidth;
+  const h  = window.innerHeight;
+  const out = document.createElement("canvas");
+  out.width  = w;
+  out.height = h;
+  const ctx = out.getContext("2d");
 
   const bgImg = new Image();
-  bgImg.crossOrigin = "anonymous";
   bgImg.onload = () => {
     ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
 
     const placedEls = Array.from(document.querySelectorAll("#game .placed"));
-    if(placedEls.length === 0){ finish(); return; }
-
-    let pending = 0;
 
     placedEls.forEach(el => {
       const hostRect = el.getBoundingClientRect();
       const canvases = el.tagName === "CANVAS"
         ? [el]
         : Array.from(el.querySelectorAll("canvas"));
-
       canvases.forEach(c => {
-        pending++;
-        // Use toDataURL on the source canvas directly, then draw via Image
-        // to avoid SecurityError from createImageBitmap on tainted canvases
-        let dataURL;
-        try { dataURL = c.toDataURL(); } catch(e) {
-          pending--;
-          if(pending === 0) finish();
-          return;
-        }
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, hostRect.left, hostRect.top, hostRect.width, hostRect.height);
-          pending--;
-          if(pending === 0) finish();
-        };
-        img.onerror = () => {
-          pending--;
-          if(pending === 0) finish();
-        };
-        img.src = dataURL;
+        if(!c._ready) return; // skip canvases not yet fully drawn
+        ctx.drawImage(c, hostRect.left, hostRect.top, hostRect.width, hostRect.height);
       });
     });
+
+    try {
+      const a = document.createElement("a");
+      a.download = "room.png";
+      a.href = out.toDataURL("image/png");
+      a.click();
+    } catch(err) {
+      alert("Screenshot failed: " + err.message);
+    }
+    restore();
   };
   bgImg.onerror = () => {
+    alert("Could not load background.");
     restore();
-    alert("Could not load room background for screenshot.");
   };
   bgImg.src = "./images/room.png";
 }
 
 document.getElementById("screenshotBtn").onpointerdown = e => {
   e.preventDefault();
+  e.stopPropagation();
   takeScreenshot();
 };
 
