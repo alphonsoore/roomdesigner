@@ -223,8 +223,6 @@ background:linear-gradient(to top,#ccc,#fff);
   font-size:75%;
 }
 
-
-
 #clearBtn:active{
   transform:translate(3px,3px);
   box-shadow:1px 1px 0 rgba(0,0,0,.25);
@@ -235,6 +233,26 @@ background:linear-gradient(to top,#ccc,#fff);
 }
 .flashred{
   animation:flashred .3s infinite alternate;
+}
+
+
+#screenshotBtn,
+#saveBtn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  box-shadow: 4px 4px 0 rgba(0,0,0,.25);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+#screenshotBtn:active,
+#saveBtn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0 rgba(0,0,0,.25);
 }
 
 #colorControl{
@@ -284,7 +302,15 @@ background:linear-gradient(to top,#ccc,#fff);
 
 .window{position:absolute;z-index:1}
 
-
+/* ---------- ADMIN LOCK ---------- */
+.adminLocked #toolbox,
+.adminLocked #drawerTab {
+  visibility: hidden;
+  pointer-events: none;
+}
+.adminLocked .placed {
+  pointer-events: none;
+}
 
 /* ---------- FLASH DELETE ---------- */
 .flash{
@@ -325,13 +351,19 @@ background:linear-gradient(to top,#ccc,#fff);
       <div id="flipBtn" class="circleBtn">⇄</div>
       <div id="colorRight" class="circleBtn">▶</div>
     </div>
-	<br>
+    <br>
     <div style="display:flex;gap:18px;">
       <div id="sizeDown" class="circleBtn">−</div>
       <div id="sizeUp" class="circleBtn">+</div>
     </div>
   </div>
-  <div id="clearBtn">CLEAR<span class="beneath">ながおし</span></div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+    <div id="clearBtn">CLEAR<span class="beneath">ながおし</span></div>
+    <div style="display:flex;gap:10px;">
+      <div id="screenshotBtn">📷</div>
+      <div id="saveBtn">💾</div>
+    </div>
+  </div>
 </div>
 
 	      
@@ -393,8 +425,49 @@ playBtn.onpointerdown=()=>{
   splash.style.display="none";
   game.style.display="block";
   updateSizeButtons();
+  initRoomNaturalSize();
   renderCatalog();
 };
+
+/* ---------- ROOM RECT ---------- */
+// Returns the rendered rectangle of room.png within #playspace,
+// accounting for background-size:cover and background-position:center.
+function getRoomRect(){
+  const el = document.getElementById("playspace");
+  const vw = el.clientWidth;
+  const vh = el.clientHeight;
+
+  // We need the natural size of room.png.
+  // Store it once on first call.
+  if(!getRoomRect._pw){
+    // Fallback: treat viewport as room rect until image loads.
+    // Call initRoomNaturalSize() at startup to populate this.
+    return {left:0, top:0, width:vw, height:vh};
+  }
+  const nw = getRoomRect._pw;
+  const nh = getRoomRect._ph;
+
+  const scale = Math.max(vw/nw, vh/nh);
+  const rw = nw * scale;
+  const rh = nh * scale;
+  return {
+    left:  (vw - rw) / 2,
+    top:   (vh - rh) / 2,
+    width: rw,
+    height: rh
+  };
+}
+
+/* ---------- REPOSITION ON RESIZE ---------- */
+window.addEventListener("resize", ()=>{
+  const rr = getRoomRect();
+  document.querySelectorAll("#game .placed").forEach(el=>{
+    if(el._rx !== undefined){
+      el.style.left = (rr.left + el._rx * rr.width)  + "px";
+      el.style.top  = (rr.top  + el._ry * rr.height) + "px";
+    }
+  });
+});
 
 /* ---------- DRAWER ---------- */
 drawerTab.onpointerdown=()=>{
@@ -626,7 +699,7 @@ sizeDown.onpointerdown=()=>{
 };
 
 /* ---------- SPAWN ---------- */
-function spawnItem(e,color){
+function spawnItem(e, color, overrideS){
   const type = ITEM_TYPES[typeIndex];
   const isWindow = type==="window";
   const isBookshelf = type==="bookshelf";
@@ -693,7 +766,7 @@ if(isWindow){
     if(flipped) host.classList.add("flip");
 
     const baseScale=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
-    host.style.setProperty("--s",baseScale*SIZE_STEPS[sizeStep]);
+    host.style.setProperty("--s", overrideS !== undefined ? overrideS : baseScale * SIZE_STEPS[sizeStep]);
   }else{
     mainCanvas=document.createElement("canvas");
     mainCanvas.className="placed "+type;
@@ -701,10 +774,13 @@ if(isWindow){
     if(flipped) mainCanvas.classList.add("flip");
 
     const baseScale=parseFloat(getComputedStyle(mainCanvas).getPropertyValue("--s")||1);
-    mainCanvas.style.setProperty("--s",baseScale*SIZE_STEPS[sizeStep]);
+    mainCanvas.style.setProperty("--s", overrideS !== undefined ? overrideS : baseScale*SIZE_STEPS[sizeStep]);
 
     host=mainCanvas;
   }
+
+	  host._type  = ITEM_TYPES[typeIndex];
+  host._color = color;
 
   /* ---------- DRAG ---------- */
   let ox=0,oy=0,firstGrab=true;
@@ -727,8 +803,11 @@ if(isWindow){
   host.onpointermove=ev=>{
     if(ev.buttons){
       const s=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
-      host.style.left=(ev.clientX-ox*s)+"px";
+	  host.style.left=(ev.clientX-ox*s)+"px";
       host.style.top =(ev.clientY-oy*s)+"px";
+      const rr=getRoomRect();
+      host._rx=(parseFloat(host.style.left)-rr.left)/rr.width;
+      host._ry=(parseFloat(host.style.top) -rr.top) /rr.height;
       const tb=toolbox.getBoundingClientRect();
       toolbox.classList.toggle("flash",ev.clientY>tb.top);
     }
@@ -779,22 +858,164 @@ if(isWindow){
   };
 }
     const s0=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
-    host.style.left=(e.clientX-(mainCanvas.width*s0)/2)+"px";
-    host.style.top =(e.clientY-(mainCanvas.height*s0)/2)+"px";
+    const rr=getRoomRect();
+    if(e._restore){
+      // Direct restore: rx/ry are already correct, just set pixel position
+      host.style.left = (rr.left + e._rx * rr.width)  + "px";
+      host.style.top  = (rr.top  + e._ry * rr.height) + "px";
+      host._rx = e._rx;
+      host._ry = e._ry;
+    } else {
+      host.style.left=(e.clientX-(mainCanvas.width*s0)/2)+"px";
+      host.style.top =(e.clientY-(mainCanvas.height*s0)/2)+"px";
+      host._rx = (parseFloat(host.style.left) - rr.left) / rr.width;
+      host._ry = (parseFloat(host.style.top)  - rr.top)  / rr.height;
 
-    const r=host.getBoundingClientRect();
-    host.dispatchEvent(new PointerEvent("pointerdown",{
-      pointerId:e.pointerId,
-      clientX:r.left+r.width/2,
-      clientY:r.top +r.height/2,
-      buttons:1
-    }));
+      const r=host.getBoundingClientRect();
+      host.dispatchEvent(new PointerEvent("pointerdown",{
+        pointerId:e.pointerId,
+        clientX:r.left+r.width/2,
+        clientY:r.top +r.height/2,
+        buttons:1
+      }));
+    }
   };
 }
 
+/* ---------- SCREENSHOT ---------- */
+function takeScreenshot(){
+  const toolbox   = document.getElementById("toolbox");
+  const drawerTab = document.getElementById("drawerTab");
+  toolbox.style.visibility   = "hidden";
+  drawerTab.style.visibility = "hidden";
 
+  const rr = getRoomRect();
+  const w  = window.innerWidth;
+  const h  = window.innerHeight;
+  const canvas = document.createElement("canvas");
+  canvas.width  = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
 
+  const bgImg = new Image();
+  bgImg.src = "./images/room.png";
+  bgImg.onload = () => {
+    // Draw background exactly as CSS cover renders it
+    ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
 
+    const placedEls = Array.from(document.querySelectorAll("#game .placed"));
+    let pending = 0;
+
+    function finish(){
+      toolbox.style.visibility   = "";
+      drawerTab.style.visibility = "";
+      const a = document.createElement("a");
+      a.download = "room.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    }
+
+    if(placedEls.length === 0){ finish(); return; }
+
+    placedEls.forEach(el => {
+      const hostRect = el.getBoundingClientRect();
+      const canvases = el.tagName === "CANVAS"
+        ? [el]
+        : Array.from(el.querySelectorAll("canvas"));
+
+      canvases.forEach(c => {
+        pending++;
+        createImageBitmap(c).then(bmp => {
+          ctx.drawImage(bmp,
+            hostRect.left, hostRect.top,
+            hostRect.width, hostRect.height
+          );
+          bmp.close();
+          pending--;
+          if(pending === 0) finish();
+        }).catch(() => {
+          pending--;
+          if(pending === 0) finish();
+        });
+      });
+    });
+  };
+}
+
+document.getElementById("screenshotBtn").onpointerdown = e => {
+  e.preventDefault();
+  takeScreenshot();
+};
+
+/* ---------- SAVE / LOAD ---------- */
+function saveRoom(){
+  const rr = getRoomRect();
+  const data = Array.from(document.querySelectorAll("#game .placed")).map(el => {
+    const s = parseFloat(getComputedStyle(el).getPropertyValue("--s") || 1);
+    return {
+      type:    el._type,
+      color:   el._color,
+      flipped: el.classList.contains("flip"),
+      rx:      el._rx,
+      ry:      el._ry,
+      s:       s
+    };
+  }).filter(d => d.type); // exclude any el missing metadata
+  localStorage.setItem("roomSave", JSON.stringify(data));
+}
+
+function loadRoom(){
+  const raw = localStorage.getItem("roomSave");
+  if(!raw) return;
+  let data;
+  try{ data = JSON.parse(raw); } catch(e){ return; }
+  data.forEach(d => {
+    flipped = d.flipped;
+    typeIndex = ITEM_TYPES.indexOf(d.type);
+    spawnItem({ _restore: true, _rx: d.rx, _ry: d.ry, pointerId: -1 }, d.color, d.s);
+  });
+  flipped = false;
+  typeIndex = 0;
+  renderCatalog();
+}
+
+document.getElementById("saveBtn").onpointerdown = e => {
+  e.preventDefault();
+  saveRoom();
+};
+
+// Restore saved room once background image dimensions are known
+function initRoomNaturalSize(){
+  const img = new Image();
+  img.src = "./images/room.png";
+  img.onload = () => {
+    getRoomRect._pw = img.naturalWidth;
+    getRoomRect._ph = img.naturalHeight;
+    loadRoom();
+  };
+}
+
+/* ---------- ADMIN LOCK ---------- */
+let adminLocked = false;
+let adminGrace = false;
+const ADMIN_KEYS = new Set();
+
+document.addEventListener("keydown", e => {
+  ADMIN_KEYS.add(e.key.toUpperCase());
+  if(ADMIN_KEYS.has("S") && ADMIN_KEYS.has("T") && ADMIN_KEYS.has("O")){
+    if(!adminGrace){
+      adminGrace = true;
+      setTimeout(() => { adminGrace = false; }, 800);
+      adminLocked = !adminLocked;
+      game.classList.toggle("adminLocked", adminLocked);
+	  if(adminLocked) saveRoom();
+    }
+  }
+});
+
+document.addEventListener("keyup", e => {
+  ADMIN_KEYS.delete(e.key.toUpperCase());
+});
 
 /* ---------- BLOCK CONTEXT ---------- */
 document.addEventListener("contextmenu",e=>e.preventDefault());
