@@ -636,7 +636,7 @@ function renderCatalog(){
 /* ---------- IMAGE TINT ---------- */
 function tintImage(src, color, canvas) {
   const img = new Image();
-  img.src = src;
+  img.crossOrigin = "anonymous";
   img.onload = () => {
     const ctx = canvas.getContext("2d");
     canvas.width = img.width;
@@ -659,10 +659,10 @@ function tintImage(src, color, canvas) {
     ctx.globalCompositeOperation = "destination-in";
     ctx.drawImage(img, 0, 0);
     ctx.globalCompositeOperation = "source-over";
-    canvas._ready = true;  // ← mark canvas as fully drawn
+    canvas._ready = true;
   };
+  img.src = src + "?v=1";
 }
-
 
 /* ---------- SIZE CONTROL ---------- */
 const SIZE_STEPS = [0.25, 0.5, 0.65, 0.8, 1.0, 1.25, 1.5];
@@ -708,20 +708,18 @@ function spawnItem(e, color, overrideS){
     host.style.position="absolute";
     game.appendChild(host);
 
-if(isWindow){
-  const sky=document.createElement("div");
-  sky.className="windowSky";
-
-  const v=document.createElement("video");
-  v.src="./images/sky.webm";
-  v.autoplay=true;
-  v.loop=true;
-  v.muted=true;
-  v.playsInline=true;
-
-  sky.appendChild(v);
-  host.appendChild(sky);
-}
+    if(isWindow){
+      const sky=document.createElement("div");
+      sky.className="windowSky";
+      const v=document.createElement("video");
+      v.src="./images/sky.webm";
+      v.autoplay=true;
+      v.loop=true;
+      v.muted=true;
+      v.playsInline=true;
+      sky.appendChild(v);
+      host.appendChild(sky);
+    }
 
     mainCanvas=document.createElement("canvas");
     mainCanvas.style.position="relative";
@@ -737,25 +735,25 @@ if(isWindow){
       booksCanvas.style.pointerEvents="none";
       host.appendChild(booksCanvas);
     }
-	if(isCloset){
-  jacketCanvas=document.createElement("canvas");
-  jacketCanvas.style.position="absolute";
-  jacketCanvas.style.left="0";
-  jacketCanvas.style.top="0";
-  jacketCanvas.style.zIndex="2";
-  jacketCanvas.style.pointerEvents="none";
-  host.appendChild(jacketCanvas);
-}
-		if(isBed){
-  bedframeCanvas=document.createElement("canvas");
-  bedframeCanvas.style.position="absolute";
-  bedframeCanvas.style.left="0";
-  bedframeCanvas.style.top="0";
-  bedframeCanvas.style.zIndex="2";
-  bedframeCanvas.style.pointerEvents="none";
-  host.appendChild(bedframeCanvas);
-}
-	
+    if(isCloset){
+      jacketCanvas=document.createElement("canvas");
+      jacketCanvas.style.position="absolute";
+      jacketCanvas.style.left="0";
+      jacketCanvas.style.top="0";
+      jacketCanvas.style.zIndex="2";
+      jacketCanvas.style.pointerEvents="none";
+      host.appendChild(jacketCanvas);
+    }
+    if(isBed){
+      bedframeCanvas=document.createElement("canvas");
+      bedframeCanvas.style.position="absolute";
+      bedframeCanvas.style.left="0";
+      bedframeCanvas.style.top="0";
+      bedframeCanvas.style.zIndex="2";
+      bedframeCanvas.style.pointerEvents="none";
+      host.appendChild(bedframeCanvas);
+    }
+
     if(flipped) host.classList.add("flip");
 
     const baseScale=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
@@ -767,12 +765,12 @@ if(isWindow){
     if(flipped) mainCanvas.classList.add("flip");
 
     const baseScale=parseFloat(getComputedStyle(mainCanvas).getPropertyValue("--s")||1);
-    mainCanvas.style.setProperty("--s", overrideS !== undefined ? overrideS : baseScale*SIZE_STEPS[sizeStep]);
+    mainCanvas.style.setProperty("--s", overrideS !== undefined ? overrideS : baseScale * SIZE_STEPS[sizeStep]);
 
     host=mainCanvas;
   }
 
-	  host._type  = ITEM_TYPES[typeIndex];
+  host._type  = ITEM_TYPES[typeIndex];
   host._color = color;
 
   /* ---------- DRAG ---------- */
@@ -781,7 +779,6 @@ if(isWindow){
   host.onpointerdown=ev=>{
     const s=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
     if(firstGrab){
-      const r=mainCanvas.getBoundingClientRect();
       ox=(mainCanvas.width/2)/s;
       oy=(mainCanvas.height/2)/s;
       firstGrab=false;
@@ -796,7 +793,7 @@ if(isWindow){
   host.onpointermove=ev=>{
     if(ev.buttons){
       const s=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
-	  host.style.left=(ev.clientX-ox*s)+"px";
+      host.style.left=(ev.clientX-ox*s)+"px";
       host.style.top =(ev.clientY-oy*s)+"px";
       const rr=getRoomRect();
       host._rx=(parseFloat(host.style.left)-rr.left)/rr.width;
@@ -815,57 +812,60 @@ if(isWindow){
 
   /* ---------- LOAD IMAGES ---------- */
   const img=new Image();
-  img.src="./images/"+type+".png";
+  img.crossOrigin="anonymous";
   img.onload=()=>{
     mainCanvas.width=img.width;
     mainCanvas.height=img.height;
-    tintImage(img.src,color,mainCanvas);
+    tintImage(img.src, color, mainCanvas);
 
     if(isBookshelf){
       const imgB=new Image();
-      imgB.src="./images/books.png";
+      imgB.crossOrigin="anonymous";
       imgB.onload=()=>{
         booksCanvas.width=imgB.width;
         booksCanvas.height=imgB.height;
         booksCanvas.getContext("2d").drawImage(imgB,0,0);
-		booksCanvas._ready = true;
+        booksCanvas._ready=true;
       };
+      imgB.src="./images/books.png?v=1";
     }
-	
-	if(isCloset){
-  const imgJ=new Image();
-  imgJ.src="./images/jacket.png";
-  imgJ.onload=()=>{
-    jacketCanvas.width=imgJ.width;
-    jacketCanvas.height=imgJ.height;
-    jacketCanvas.getContext("2d").drawImage(imgJ,0,0);
-	jacketCanvas._ready = true;
-  };
-}
 
-	if(isBed){
-  const imgJ=new Image();
-  imgJ.src="./images/bedframe.png";
-  imgJ.onload=()=>{
-    bedframeCanvas.width=imgJ.width;
-    bedframeCanvas.height=imgJ.height;
-    bedframeCanvas.getContext("2d").drawImage(imgJ,0,0);
-	bedframeCanvas._ready = true;
-  };
-}
+    if(isCloset){
+      const imgJ=new Image();
+      imgJ.crossOrigin="anonymous";
+      imgJ.onload=()=>{
+        jacketCanvas.width=imgJ.width;
+        jacketCanvas.height=imgJ.height;
+        jacketCanvas.getContext("2d").drawImage(imgJ,0,0);
+        jacketCanvas._ready=true;
+      };
+      imgJ.src="./images/jacket.png?v=1";
+    }
+
+    if(isBed){
+      const imgJ=new Image();
+      imgJ.crossOrigin="anonymous";
+      imgJ.onload=()=>{
+        bedframeCanvas.width=imgJ.width;
+        bedframeCanvas.height=imgJ.height;
+        bedframeCanvas.getContext("2d").drawImage(imgJ,0,0);
+        bedframeCanvas._ready=true;
+      };
+      imgJ.src="./images/bedframe.png?v=1";
+    }
+
     const s0=parseFloat(getComputedStyle(host).getPropertyValue("--s")||1);
     const rr=getRoomRect();
     if(e._restore){
-      // Direct restore: rx/ry are already correct, just set pixel position
-      host.style.left = (rr.left + e._rx * rr.width)  + "px";
-      host.style.top  = (rr.top  + e._ry * rr.height) + "px";
-      host._rx = e._rx;
-      host._ry = e._ry;
-    } else {
+      host.style.left=(rr.left + e._rx * rr.width)+"px";
+      host.style.top =(rr.top  + e._ry * rr.height)+"px";
+      host._rx=e._rx;
+      host._ry=e._ry;
+    }else{
       host.style.left=(e.clientX-(mainCanvas.width*s0)/2)+"px";
       host.style.top =(e.clientY-(mainCanvas.height*s0)/2)+"px";
-      host._rx = (parseFloat(host.style.left) - rr.left) / rr.width;
-      host._ry = (parseFloat(host.style.top)  - rr.top)  / rr.height;
+      host._rx=(parseFloat(host.style.left)-rr.left)/rr.width;
+      host._ry=(parseFloat(host.style.top) -rr.top) /rr.height;
 
       const r=host.getBoundingClientRect();
       host.dispatchEvent(new PointerEvent("pointerdown",{
@@ -876,6 +876,7 @@ if(isWindow){
       }));
     }
   };
+  img.src="./images/"+type+".png?v=1";
 }
 
 /* ---------- SCREENSHOT ---------- */
@@ -956,13 +957,14 @@ document.getElementById("saveBtn").onpointerdown = e => {
 // Restore saved room once background image dimensions are known
 function initRoomNaturalSize(){
   const img = new Image();
+  img.crossOrigin = "anonymous";
   img.onload = () => {
     getRoomRect._pw = img.naturalWidth;
     getRoomRect._ph = img.naturalHeight;
-    getRoomRect._img = img;  // store for screenshot reuse
+    getRoomRect._img = img;
     loadRoom();
   };
-  img.src = "./images/room.png";
+  img.src = "./images/room.png?v=1";
 }
 
 /* ---------- ADMIN LOCK ---------- */
