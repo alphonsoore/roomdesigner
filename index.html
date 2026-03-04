@@ -905,38 +905,35 @@ function takeScreenshot(){
   out.height = h;
   const ctx = out.getContext("2d");
 
-  const bgImg = new Image();
-  bgImg.onload = () => {
-    ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
+const bgImg = getRoomRect._img;
+  if(!bgImg){
+    alert("Background not ready.");
+    restore();
+    return;
+  }
+  ctx.drawImage(bgImg, rr.left, rr.top, rr.width, rr.height);
 
-    const placedEls = Array.from(document.querySelectorAll("#game .placed"));
-
-    placedEls.forEach(el => {
-      const hostRect = el.getBoundingClientRect();
-      const canvases = el.tagName === "CANVAS"
-        ? [el]
-        : Array.from(el.querySelectorAll("canvas"));
-      canvases.forEach(c => {
-        if(!c._ready) return; // skip canvases not yet fully drawn
-        ctx.drawImage(c, hostRect.left, hostRect.top, hostRect.width, hostRect.height);
-      });
+  const placedEls = Array.from(document.querySelectorAll("#game .placed"));
+  placedEls.forEach(el => {
+    const hostRect = el.getBoundingClientRect();
+    const canvases = el.tagName === "CANVAS"
+      ? [el]
+      : Array.from(el.querySelectorAll("canvas"));
+    canvases.forEach(c => {
+      if(!c._ready) return;
+      ctx.drawImage(c, hostRect.left, hostRect.top, hostRect.width, hostRect.height);
     });
+  });
 
-    try {
-      const a = document.createElement("a");
-      a.download = "room.png";
-      a.href = out.toDataURL("image/png");
-      a.click();
-    } catch(err) {
-      alert("Screenshot failed: " + err.message);
-    }
-    restore();
-  };
-  bgImg.onerror = () => {
-    alert("Could not load background.");
-    restore();
-  };
-  bgImg.src = "./images/room.png";
+  try {
+    const a = document.createElement("a");
+    a.download = "room.png";
+    a.href = out.toDataURL("image/png");
+    a.click();
+  } catch(err) {
+    alert("Screenshot failed: " + err.message);
+  }
+  restore();
 }
 
 document.getElementById("screenshotBtn").onpointerdown = e => {
@@ -985,12 +982,13 @@ document.getElementById("saveBtn").onpointerdown = e => {
 // Restore saved room once background image dimensions are known
 function initRoomNaturalSize(){
   const img = new Image();
-  img.src = "./images/room.png";
   img.onload = () => {
     getRoomRect._pw = img.naturalWidth;
     getRoomRect._ph = img.naturalHeight;
+    getRoomRect._img = img;  // store for screenshot reuse
     loadRoom();
   };
+  img.src = "./images/room.png";
 }
 
 /* ---------- ADMIN LOCK ---------- */
