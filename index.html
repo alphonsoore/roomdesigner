@@ -876,8 +876,14 @@ function loadLayout(){
 
   JSON.parse(data).forEach(item=>{
     typeIndex=ITEM_TYPES.indexOf(item.type);
-    const fakeEvent={clientX:0,clientY:0};
-    spawnItem(fakeEvent,COLORS[item.colorIndex||1]);
+spawnItem({clientX:0,clientY:0,pointerId:1}, COLORS[item.colorIndex||1]);
+
+// immediately disable auto-drag
+const el=document.querySelectorAll(".placed");
+const last=el[el.length-1];
+last.onpointerdown=null;
+last.onpointermove=null;
+last.onpointerup=null;
 
     const el=document.querySelectorAll(".placed");
     const last=el[el.length-1];
@@ -901,20 +907,22 @@ function screenshotPlayspace(){
   const ctx=canvas.getContext("2d");
 
   // draw background
-  const bg=new Image();
+const bg=new Image();
+bg.crossOrigin="anonymous";
   bg.src="./images/room.png";
   bg.onload=()=>{
     ctx.drawImage(bg,0,0,canvas.width,canvas.height);
 
     // draw each placed item
-    document.querySelectorAll(".placed").forEach(el=>{
-      const r=el.getBoundingClientRect();
-      const x=r.left-rect.left;
-      const y=r.top-rect.top;
+document.querySelectorAll(".placed").forEach(el=>{
+  const r=el.getBoundingClientRect();
+  const x=r.left-rect.left;
+  const y=r.top-rect.top;
 
-      const innerCanvas=el.querySelector("canvas")||el;
-      ctx.drawImage(innerCanvas,x,y,r.width,r.height);
-    });
+  el.querySelectorAll("canvas").forEach(c=>{
+    ctx.drawImage(c,x,y,r.width,r.height);
+  });
+});
 
     const url=canvas.toDataURL("image/png");
 
